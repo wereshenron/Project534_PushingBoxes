@@ -9,6 +9,25 @@ public class CameraPoint : MonoBehaviour
     void Start()
     {
         _camera = GetComponent<Camera>();
+
+        Cursor.visible = false;
+
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     void OnGUI()
