@@ -1,11 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraPoint : MonoBehaviour
 {
-    private Camera _camera;
     public float detectionRange = 10f;
+    public Material outlineMaterial;
+    private Camera _camera;
     void Start()
     {
         _camera = GetComponent<Camera>();
@@ -13,6 +12,7 @@ public class CameraPoint : MonoBehaviour
         Cursor.visible = false;
 
         Cursor.lockState = CursorLockMode.Locked;
+
     }
 
     void Update()
@@ -33,15 +33,15 @@ public class CameraPoint : MonoBehaviour
     void OnGUI()
     {
         int size = 12;
-        float posX = _camera.pixelWidth/2 - size/4;
-        float posY = _camera.pixelHeight/2 -size/2;
+        float posX = _camera.pixelWidth / 2 - size / 4;
+        float posY = _camera.pixelHeight / 2 - size / 2;
         GUI.Label(new Rect(posX, posY, size, size), "*");
     }
-    
 
-    private void OnDrawGizmos() 
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawRay(transform.position, transform.forward * detectionRange);
-    }
+
+    // private void OnDrawGizmos()
+    // {
+    //     Gizmos.color = Color.red;
+    //     Gizmos.DrawRay(transform.position, transform.forward * detectionRange);
+    // }
 }

@@ -18,15 +18,17 @@ public class MouseLook : MonoBehaviour
     public float maximumVert = 45.0f;
 
     private float _rotationX = 0;
+    private Camera _camera;
 
     // Start is called before the first frame update
     void Start()
     {
         Cursor.visible = false;
-        Rigidbody body = GetComponent<Rigidbody>();
-        if (body != null) {
+        if (TryGetComponent<Rigidbody>(out var body)) {
             body.freezeRotation = true;
         }
+
+        _camera = GetComponentInChildren<Camera>();
     }
 
     // Update is called once per frame
@@ -46,7 +48,8 @@ public class MouseLook : MonoBehaviour
             float delta = Input.GetAxis("Mouse X") * horizontalSensitivity;
             float rotationY = transform.localEulerAngles.y + delta;
 
-            transform.localEulerAngles = new Vector3(_rotationX, rotationY, 0);
+            _camera.transform.localEulerAngles = new Vector3(_rotationX, 0);
+            transform.localEulerAngles = new Vector3(0, rotationY, 0);
         }
     }
 }

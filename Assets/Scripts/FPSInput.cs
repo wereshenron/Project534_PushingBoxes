@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(Rigidbody))]
 [AddComponentMenu("Control Script/FPS Input")]
 public class FPSInput : MonoBehaviour
 {
@@ -13,22 +13,28 @@ public class FPSInput : MonoBehaviour
     public float sprintBoost = 1.4f;
     public float verticalVelocity;
     private CharacterController _characterController;
+    
+    private Rigidbody _rigidbody;
+    private Camera _camera;
     // Start is called before the first frame update
     void Start()
     {
         _characterController = GetComponent<CharacterController>();
+        _camera = GetComponentInChildren<Camera>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (_characterController.isGrounded) {
+        if (_characterController.isGrounded)
+        {
             verticalVelocity = 0;
 
-            if (Input.GetButtonDown("Jump")) {
+            if (Input.GetButtonDown("Jump"))
+            {
                 verticalVelocity = jumpForce;
             }
-            if (Input.GetKeyDown(KeyCode.LeftShift)) 
+            if (Input.GetKeyDown(KeyCode.LeftShift))
             {
                 speed *= sprintBoost;
             }

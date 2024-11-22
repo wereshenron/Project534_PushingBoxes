@@ -1,76 +1,90 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Push : MonoBehaviour
 {
     public float pushForce = 10f;
+    public float pullForce = 10f;
     public float detectionRange = 2.0f;
-    
-    private Rigidbody rb;
-    // private int _hitCount = 0;
-    private Camera _camera;
-    private Vector3 _pushForward;
-    private Vector3 _pullUp;
+
+    private Rigidbody _rigidbody;
+    private int _hitCount = 0;
+    [SerializeField] private Camera _camera;
 
     void Start()
     {
-        _camera = GetComponentInChildren<Camera>();
-
         if (_camera != null)
         {
-            _pushForward = _camera.transform.forward;
-            _pullUp = _camera.transform.up;
+            _camera = GetComponentInChildren<Camera>();
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        DetectCube();
+        DetectThrowableCube();
 
-        if (rb != null) 
+        if (_rigidbody != null)
         {
-            if (Input.GetMouseButton(0))
+            if (Input.GetMouseButtonDown(0))
             {
-                Launch(transform.forward);
-                Debug.Log("Hit");
-            } 
-            else if (Input.GetMouseButton(1))
+                _hitCount++;
+                Launch(_camera.transform.forward);
+            }
+            else if (Input.GetMouseButtonDown(1))
             {
-                Launch(-transform.forward);
+                Pull(_camera.transform.forward);
             }
         }
-        
+
     }
 
-    void DetectCube() {
-        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, detectionRange))
+    void DetectThrowableCube()
+    {
+        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange))
         {
-            if (hit.collider.CompareTag("Interactable"))
+            if (hit.collider.CompareTag("Interactable") || hit.collider.CompareTag("Interactable"))
             {
-                rb = hit.collider.GetComponent<Rigidbody>();
+                _rigidbody = hit.collider.GetComponent<Rigidbody>();
             }
             else
             {
-                rb = null;
+                _rigidbody = null;
             }
-        } 
-        else 
+        }
+        else
         {
-            rb = null;
+            _rigidbody = null;
         }
     }
 
-    private void OnDrawGizmos() 
+    private void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawRay(transform.position, transform.forward * detectionRange);
+        if (_camera == null)
+        {
+            _camera = GetComponentInChildren<Camera>();
+        }
+
+        if (_camera != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(_camera.transform.position, _camera.transform.forward * detectionRange);
+        }
     }
 
     void Launch(Vector3 direction)
     {
-        rb.AddForce(direction * pushForce);
+        float randomX = Random.Range(-0.1f, 0.1f);
+        float randomY = Random.Range(-0.1f, 0.1f);
+        float randomZ = Random.Range(-0.1f, 0.1f);
+
+        Vector3 randomDirection = direction + new Vector3(randomX, randomY, randomZ);
+
+        _rigidbody.AddForce(randomDirection * pushForce);
+    }
+
+    void Pull(Vector3 direction)
+    {
+        _rigidbody.AddForce(-direction * pullForce);
     }
 }

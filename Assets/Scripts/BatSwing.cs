@@ -4,16 +4,19 @@ using UnityEngine;
 
 public class BatSwing : MonoBehaviour
 {
-    public Transform bat;  // Assign the baseball bat here in the Inspector
+    public GameObject bat;  // Assign the baseball bat here in the Inspector
     public float swingSpeed = 500f;
     public float returnSpeed = 300f;
+    public float swingDuration = 1.0f;
+    public float waitTime = 0.3f;
     private bool isSwinging = false;
-    private Quaternion initialRotation;
+    public Transform endRotation;
+    private Transform initialRotation;
 
     void Start()
     {
         // Store the initial rotation for resetting the bat
-        initialRotation = bat.localRotation;
+        initialRotation = bat.transform;
     }
 
     void Update()
@@ -22,30 +25,32 @@ public class BatSwing : MonoBehaviour
         if (Input.GetMouseButtonDown(0) && !isSwinging)
         {
             isSwinging = true;
-            StartCoroutine(SwingBat());
+            StartCoroutine(SwingForward(initialRotation, endRotation, swingDuration));
         }
     }
 
-    private IEnumerator SwingBat()
+    private IEnumerator SwingForward(Transform startPosition, Transform endPosition, float duration)
     {
+        GameObject tempBat = new GameObject("TempBat");
+        Transform tempTransform = tempBat.transform;
         // Swing the bat forward
-        float swingTime = 0f;
-        while (swingTime < 1f)
+        float elapsedTime = 0f;
+        while (elapsedTime < swingDuration)
         {
-            swingTime += Time.deltaTime * swingSpeed;
-            bat.localRotation = Quaternion.Slerp(initialRotation, Quaternion.Euler(0, 0, -90), swingTime);
+            elapsedTime += Time.deltaTime;
+            bat.transform.rotation = Quaternion.Slerp(bat.transform.rotation, endPosition.rotation, elapsedTime);
             yield return null;
         }
 
         // Wait briefly after the swing
-        yield return new WaitForSeconds(0.1f);
+        yield return new WaitForSeconds(waitTime);
 
         // Return the bat to its original position
-        float returnTime = 0f;
-        while (returnTime < 1f)
+        elapsedTime = 0f;
+        while (elapsedTime < swingDuration)
         {
-            returnTime += Time.deltaTime * returnSpeed;
-            bat.localRotation = Quaternion.Slerp(Quaternion.Euler(0, 0, -90), initialRotation, returnTime);
+            elapsedTime += Time.deltaTime;
+            bat.transform.rotation = Quaternion.Slerp(bat.transform.localRotation, initialRotation.rotation, elapsedTime);
             yield return null;
         }
 
