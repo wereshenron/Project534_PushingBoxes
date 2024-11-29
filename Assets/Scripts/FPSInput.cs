@@ -66,13 +66,11 @@ public class FPSInput : MonoBehaviour
         {
             movement.Normalize();
         }
-        
+
         movement *= _speed;
 
         // Update animator Speed
         _animator.SetFloat("Speed", movement.magnitude);
-
-        Debug.Log(movement.magnitude);
 
         // Move Rigidbody
         Vector3 velocity = transform.TransformDirection(movement) * Time.fixedDeltaTime;
