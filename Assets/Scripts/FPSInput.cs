@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Claims;
+using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
@@ -7,15 +10,20 @@ using UnityEngine;
 public class FPSInput : MonoBehaviour
 {
     public float baseSpeed = 6.0f;
-    public float speed = 6.0f;
     public float gravity = -9.8f;
     public float jumpForce = 8.0f;
     public float sprintBoost = 1.4f;
+    public float groundedDetection = 1.0f;
 
     private Rigidbody _rigidbody;
     private Camera _camera;
     private Animator _animator;
-    private bool isGrounded = true;
+    private bool isGrounded = false;
+    private bool jumpRequested = false;
+    private float _speed = 6.0f;
+    private Vector3 _movement;
+    private Vector3 _normalizedMovement;
+
 
     void Start()
     {
@@ -30,60 +38,60 @@ public class FPSInput : MonoBehaviour
         // Handle Sprint
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
-            speed *= sprintBoost;
+            _speed *= sprintBoost;
         }
         else if (Input.GetKeyUp(KeyCode.LeftShift))
         {
-            speed = baseSpeed;
+            _speed = baseSpeed;
         }
+
+        // Handle jump input
+        if (isGrounded && Input.GetButtonDown("Jump"))
+        {
+            jumpRequested = true;
+        }
+
     }
 
     void FixedUpdate()
     {
         // Get input for movement
-        float deltaX = Input.GetAxis("Horizontal") * speed;
-        float deltaZ = Input.GetAxis("Vertical") * speed;
+        // Get input for movement
+        float deltaX = Input.GetAxis("Horizontal");
+        float deltaZ = Input.GetAxis("Vertical");
         Vector3 movement = new Vector3(deltaX, 0, deltaZ);
 
-        // Apply gravity if not grounded
-        if (!isGrounded)
+        // Normalize input to prevent faster diagonal movement
+        if (movement.magnitude > 1)
         {
-            movement.y += gravity * Time.fixedDeltaTime;
+            movement.Normalize();
         }
+        
+        movement *= _speed;
+
+        // Update animator Speed
+        _animator.SetFloat("Speed", movement.magnitude);
+
+        Debug.Log(movement.magnitude);
 
         // Move Rigidbody
         Vector3 velocity = transform.TransformDirection(movement) * Time.fixedDeltaTime;
         _rigidbody.MovePosition(_rigidbody.position + velocity);
 
-        // Animate 
-        float rawSpeed = _rigidbody.velocity.magnitude;
-        float normalizedSpeed = Mathf.Clamp(rawSpeed / baseSpeed * sprintBoost, 0f, 1f); // Normalize based on max speed
-        _animator.SetFloat("Speed", normalizedSpeed);
+        // Update grounded state
+        isGrounded = UpdateIsGrounded();
 
         // Handle Jump
-        if (isGrounded && Input.GetButtonDown("Jump"))
+        if (jumpRequested)
         {
             _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             isGrounded = false;
+            jumpRequested = false;
         }
     }
 
-    void OnCollisionStay(Collision collision)
+    bool UpdateIsGrounded()
     {
-        // Check if grounded
-        foreach (ContactPoint contact in collision.contacts)
-        {
-            if (Vector3.Dot(contact.normal, Vector3.up) > 0.5f) // Surface is mostly flat
-            {
-                isGrounded = true;
-                break;
-            }
-        }
-    }
-
-    void OnCollisionExit(Collision collision)
-    {
-        // If no collisions, assume not grounded
-        isGrounded = false;
+        return Physics.Raycast(transform.position, Vector3.down, groundedDetection);
     }
 }
