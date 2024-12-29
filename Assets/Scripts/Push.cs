@@ -6,9 +6,7 @@ public class Push : MonoBehaviour
     public float pushForce = 10f;
     public float pullForce = 10f;
     public float detectionRange = 2.0f;
-
     private Rigidbody _rigidbody;
-    private int _hitCount = 0;
     [SerializeField] private Camera _camera;
 
     void Start()
@@ -22,28 +20,22 @@ public class Push : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        DetectThrowableCube();
-
-        if (_rigidbody != null)
+        if (Input.GetMouseButtonDown(0))
         {
-            if (Input.GetMouseButtonDown(0))
-            {
-                _hitCount++;
-                Launch(_camera.transform.forward);
-            }
-            else if (Input.GetMouseButtonDown(1))
-            {
-                Pull(_camera.transform.forward);
-            }
+            Launch(_camera.transform.forward);
+        }
+        else if (Input.GetMouseButtonDown(1))
+        {
+            Pull(_camera.transform.forward);
         }
 
     }
 
-    void DetectThrowableCube()
+    void DetectInteractableCube()
     {
         if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange))
         {
-            if (hit.collider.CompareTag("Interactable") || hit.collider.CompareTag("Interactable"))
+            if (hit.collider.CompareTag("Interactable"))
             {
                 _rigidbody = hit.collider.GetComponent<Rigidbody>();
             }
@@ -58,22 +50,27 @@ public class Push : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
-    {
-        if (_camera == null)
-        {
-            _camera = GetComponentInChildren<Camera>();
-        }
+    // private void OnDrawGizmos()
+    // {
+    //     if (_camera == null)
+    //     {
+    //         _camera = GetComponentInChildren<Camera>();
+    //     }
 
-        if (_camera != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawRay(_camera.transform.position, _camera.transform.forward * detectionRange);
-        }
-    }
+    //     if (_camera != null)
+    //     {
+    //         Gizmos.color = Color.red;
+    //         Gizmos.DrawRay(_camera.transform.position, _camera.transform.forward * detectionRange);
+    //     }
+    // }
 
     void Launch(Vector3 direction)
     {
+        DetectInteractableCube();
+        if (_rigidbody == null) 
+        {
+            return;
+        }
         float randomX = Random.Range(-0.1f, 0.1f);
         float randomY = Random.Range(-0.1f, 0.1f);
         float randomZ = Random.Range(-0.1f, 0.1f);
@@ -81,10 +78,18 @@ public class Push : MonoBehaviour
         Vector3 randomDirection = direction + new Vector3(randomX, randomY, randomZ);
 
         _rigidbody.AddForce(randomDirection * pushForce);
+        _rigidbody = null;
     }
 
     void Pull(Vector3 direction)
     {
+        DetectInteractableCube();
+        if (_rigidbody == null)
+        {
+            return;
+        }
+
         _rigidbody.AddForce(-direction * pullForce);
+        _rigidbody = null;
     }
 }

@@ -23,6 +23,8 @@ public class FPSInput : MonoBehaviour
     private float _speed = 6.0f;
     private Vector3 _movement;
     private Vector3 _normalizedMovement;
+    private bool _sprintingBegan = false;
+    private bool _sprintingEnded = false;
 
 
     void Start()
@@ -35,14 +37,19 @@ public class FPSInput : MonoBehaviour
 
     void Update()
     {
+
+        // Update grounded state
+        isGrounded = UpdateIsGrounded();
+        
         // Handle Sprint
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
-            _speed *= sprintBoost;
+            // _speed *= sprintBoost;
+            _sprintingBegan = true;
         }
         else if (Input.GetKeyUp(KeyCode.LeftShift))
         {
-            _speed = baseSpeed;
+            _sprintingEnded = true;
         }
 
         // Handle jump input
@@ -55,6 +62,18 @@ public class FPSInput : MonoBehaviour
 
     void FixedUpdate()
     {
+         // Handle Sprint
+        if (_sprintingBegan)
+        {
+            _speed *= sprintBoost;
+            _sprintingBegan = false;
+        }
+        else if (_sprintingEnded)
+        {
+            _speed = baseSpeed;
+            _sprintingEnded = false;
+        }
+
         // Get input for movement
         // Get input for movement
         float deltaX = Input.GetAxis("Horizontal");
@@ -75,9 +94,6 @@ public class FPSInput : MonoBehaviour
         // Move Rigidbody
         Vector3 velocity = transform.TransformDirection(movement) * Time.fixedDeltaTime;
         _rigidbody.MovePosition(_rigidbody.position + velocity);
-
-        // Update grounded state
-        isGrounded = UpdateIsGrounded();
 
         // Handle Jump
         if (jumpRequested)
