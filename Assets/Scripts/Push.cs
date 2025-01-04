@@ -11,9 +11,9 @@ public class Push : MonoBehaviour
 
     void Start()
     {
-        if (_camera != null)
+        if (_camera == null)
         {
-            _camera = GetComponentInChildren<Camera>();
+            _camera = Camera.main;
         }
     }
 
