@@ -15,20 +15,27 @@ public class FPSInput : MonoBehaviour
     public float sprintBoost = 1.4f;
     public float groundedDetection = 1.0f;
     public float rotationSpeed = 10f;
+    public float speed = 6.0f;
 
     private Rigidbody _rigidbody;
     [SerializeField] private Camera _camera;
     private Animator _animator;
     private bool isGrounded = false;
     private bool jumpRequested = false;
+    private float vertical;
+    private float horizontal;
     private float _speed = 6.0f;
     private Vector3 _moveDirection;
+    private bool _isRagdoll = false;
 
 
     void Start()
     {
         _rigidbody = GetComponent<Rigidbody>();
-        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        if (!_isRagdoll)
+        {
+            _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        }
         _animator = GetComponent<Animator>();
         if (_camera == null)
         {
@@ -38,23 +45,28 @@ public class FPSInput : MonoBehaviour
 
     void Update()
     {
-
-        float deltaX = Input.GetAxis("Horizontal");
-        float deltaZ = Input.GetAxis("Vertical");
-
-        _moveDirection = (_camera.transform.forward * deltaZ) + (_camera.transform.right * deltaX);
-
         // Update grounded state
         isGrounded = UpdateIsGrounded();
 
         // Handle Sprint
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
-            _speed *= sprintBoost;
+            speed *= sprintBoost;
         }
         else if (Input.GetKeyUp(KeyCode.LeftShift))
         {
-            _speed = baseSpeed;
+            speed = baseSpeed;
+        }
+
+        if (Input.GetKeyDown(KeyCode.F) && !_isRagdoll && isGrounded)
+        {
+            _rigidbody.constraints = RigidbodyConstraints.None;
+            _isRagdoll = true;
+        }
+        else if (Input.GetKeyDown(KeyCode.F) && _isRagdoll && isGrounded)
+        {
+            StartCoroutine(RotateToUpright());
+            _isRagdoll = false;
         }
 
         // Handle jump input
@@ -62,27 +74,28 @@ public class FPSInput : MonoBehaviour
         {
             jumpRequested = true;
         }
-        
-        _rigidbody.velocity.Normalize();
+
+        // _rigidbody.velocity.Normalize();
         // Update animator Speed
         _animator.SetFloat("Speed", _rigidbody.velocity.magnitude);
 
-        Debug.Log(_moveDirection);
-
-        if (_moveDirection.magnitude > 0.1f && isGrounded)
+        if (_rigidbody.velocity.magnitude > 0.1f && isGrounded)
         {
-            RotateCharacter();
+            // RotateCharacter();
         }
 
 
     }
 
     void FixedUpdate()
-    { 
+    {
+        vertical = Input.GetAxis("Vertical");
+        horizontal = Input.GetAxis("Horizontal");
+        Vector3 moveDirection = (_camera.transform.forward * vertical + _camera.transform.right * horizontal).normalized;
+        _rigidbody.velocity = new Vector3(moveDirection.x * speed, _rigidbody.velocity.y, moveDirection.z * speed);
 
-        Vector3 velocity = _moveDirection * _speed;
-        velocity.y = _rigidbody.velocity.y;  // Preserve vertical velocity for jumps/falls
-        _rigidbody.velocity = velocity;
+        // Testing new input system 
+        
 
         // Handle Jump
         if (jumpRequested)
@@ -104,5 +117,34 @@ public class FPSInput : MonoBehaviour
         Quaternion targetRotation = Quaternion.LookRotation(cameraTarget);
 
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+    }
+
+    private IEnumerator RotateToUpright()
+    {
+        Quaternion startRotation = transform.rotation;
+        Quaternion targetRotation = Quaternion.Euler(0, 0, 0);
+        float elapsedTime = 0f;
+        float rotationDuration = 0.5f;  // Time in seconds for the full rotation
+
+        while (elapsedTime < rotationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / rotationDuration;
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, t);
+            yield return null;  // Wait for the next frame
+        }
+        Debug.Log("done rotating");
+
+        transform.rotation = targetRotation;  // Ensure we snap exactly to target at the end
+        _rigidbody.angularVelocity = Vector3.zero;
+        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Floor"))
+        {
+            isGrounded = true;
+        }
     }
 }
