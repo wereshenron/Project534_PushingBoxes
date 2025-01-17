@@ -24,9 +24,8 @@ public class FPSInput : MonoBehaviour
     private bool jumpRequested = false;
     private float vertical;
     private float horizontal;
-    private float _speed = 6.0f;
-    private Vector3 _moveDirection;
     private bool _isRagdoll = false;
+    private Vector3 _inputKey;
 
 
     void Start()
@@ -34,7 +33,7 @@ public class FPSInput : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody>();
         if (!_isRagdoll)
         {
-            _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY;
         }
         _animator = GetComponent<Animator>();
         if (_camera == null)
@@ -58,7 +57,7 @@ public class FPSInput : MonoBehaviour
             speed = baseSpeed;
         }
 
-        if (Input.GetKeyDown(KeyCode.F) && !_isRagdoll && isGrounded)
+        if (Input.GetKeyDown(KeyCode.F) && !_isRagdoll)
         {
             _rigidbody.constraints = RigidbodyConstraints.None;
             _isRagdoll = true;
@@ -84,6 +83,7 @@ public class FPSInput : MonoBehaviour
             // RotateCharacter();
         }
 
+        _inputKey = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
 
     }
 
@@ -92,10 +92,20 @@ public class FPSInput : MonoBehaviour
         vertical = Input.GetAxis("Vertical");
         horizontal = Input.GetAxis("Horizontal");
         Vector3 moveDirection = (_camera.transform.forward * vertical + _camera.transform.right * horizontal).normalized;
-        _rigidbody.velocity = new Vector3(moveDirection.x * speed, _rigidbody.velocity.y, moveDirection.z * speed);
+        if (!_isRagdoll)
+        {
+            _rigidbody.velocity = new Vector3(moveDirection.x * speed, _rigidbody.velocity.y, moveDirection.z * speed);
+        }
 
-        // Testing new input system 
-        
+        // Testing new input system Vector3 moveDirection = (_camera.transform.forward * vertical + _camera.transform.right * horizontal) * speed;
+        // moveDirection.y = 0;
+        // if (!_isRagdoll)
+        // {
+        //     // _rigidbody.velocity = new Vector3(moveDirection.x * speed, _rigidbody.velocity.y, moveDirection.z * speed);
+        //     Debug.Log(moveDirection);
+        //     _rigidbody.AddForce(moveDirection, ForceMode.VelocityChange);
+        // }
+
 
         // Handle Jump
         if (jumpRequested)
