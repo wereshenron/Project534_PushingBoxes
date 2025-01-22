@@ -9,13 +9,14 @@ using UnityEngine;
 [AddComponentMenu("Control Script/FPS Input")]
 public class FPSInput : MonoBehaviour
 {
-    public float baseSpeed = 6.0f;
-    public float gravity = -9.8f;
-    public float jumpForce = 8.0f;
-    public float sprintBoost = 1.4f;
-    public float groundedDetection = 1.0f;
-    public float rotationSpeed = 10f;
-    public float speed = 6.0f;
+    public float baseSpeed;
+    public float gravity;
+    public float jumpForce;
+    public float sprintBoost;
+    public float groundedDetection;
+    public float rotationSpeed;
+    public float speed;
+    public float drag;
 
     private Rigidbody _rigidbody;
     [SerializeField] private Camera _camera;
@@ -35,11 +36,16 @@ public class FPSInput : MonoBehaviour
         {
             _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY;
         }
+        else 
+        {
+            _rigidbody.constraints = RigidbodyConstraints.None;
+        }
         _animator = GetComponent<Animator>();
         if (_camera == null)
         {
             _camera = Camera.main;
         }
+        baseSpeed = speed;
     }
 
     void Update()
@@ -57,14 +63,17 @@ public class FPSInput : MonoBehaviour
             speed = baseSpeed;
         }
 
+        // Is ragdollin 
         if (Input.GetKeyDown(KeyCode.F) && !_isRagdoll)
         {
             _rigidbody.constraints = RigidbodyConstraints.None;
+            _rigidbody.drag = 0;
             _isRagdoll = true;
         }
         else if (Input.GetKeyDown(KeyCode.F) && _isRagdoll && isGrounded)
         {
             StartCoroutine(RotateToUpright());
+            _rigidbody.drag = drag;
             _isRagdoll = false;
         }
 
@@ -78,7 +87,7 @@ public class FPSInput : MonoBehaviour
         // Update animator Speed
         _animator.SetFloat("Speed", _rigidbody.velocity.magnitude);
 
-        if (_rigidbody.velocity.magnitude > 0.1f && isGrounded)
+        if (_rigidbody.velocity.magnitude > 0.1f && isGrounded && !_isRagdoll)
         {
             // RotateCharacter();
         }
@@ -92,19 +101,19 @@ public class FPSInput : MonoBehaviour
         vertical = Input.GetAxis("Vertical");
         horizontal = Input.GetAxis("Horizontal");
         Vector3 moveDirection = (_camera.transform.forward * vertical + _camera.transform.right * horizontal).normalized;
+        moveDirection.y = 0;
         if (!_isRagdoll)
         {
-            _rigidbody.velocity = new Vector3(moveDirection.x * speed, _rigidbody.velocity.y, moveDirection.z * speed);
-        }
+            // _rigidbody.velocity = new Vector3(moveDirection.x * speed, _rigidbody.velocity.y, moveDirection.z * speed);
+            _rigidbody.AddForce(new Vector3(moveDirection.x * speed, moveDirection.y, moveDirection.z * speed), ForceMode.Force);
 
-        // Testing new input system Vector3 moveDirection = (_camera.transform.forward * vertical + _camera.transform.right * horizontal) * speed;
-        // moveDirection.y = 0;
-        // if (!_isRagdoll)
-        // {
-        //     // _rigidbody.velocity = new Vector3(moveDirection.x * speed, _rigidbody.velocity.y, moveDirection.z * speed);
-        //     Debug.Log(moveDirection);
-        //     _rigidbody.AddForce(moveDirection, ForceMode.VelocityChange);
-        // }
+            if (moveDirection != Vector3.zero)
+            {
+                // Rotate Character towards direction of movement
+                Quaternion toRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, rotationSpeed * Time.fixedDeltaTime);
+            }
+        }
 
 
         // Handle Jump
@@ -123,10 +132,11 @@ public class FPSInput : MonoBehaviour
 
     void RotateCharacter()
     {
-        Vector3 cameraTarget = new(_camera.transform.forward.x, 0, _camera.transform.forward.z);
-        Quaternion targetRotation = Quaternion.LookRotation(cameraTarget);
+        // Calculate the rotation to face the velocity direction
+        Quaternion targetRotation = Quaternion.LookRotation(_rigidbody.velocity);
 
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            // Apply the rotation to the Rigidbody
+        // _rigidbody.rotation = targetRotation;
     }
 
     private IEnumerator RotateToUpright()
@@ -143,7 +153,6 @@ public class FPSInput : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, t);
             yield return null;  // Wait for the next frame
         }
-        Debug.Log("done rotating");
 
         transform.rotation = targetRotation;  // Ensure we snap exactly to target at the end
         _rigidbody.angularVelocity = Vector3.zero;
