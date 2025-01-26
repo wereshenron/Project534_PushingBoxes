@@ -19,7 +19,6 @@ public class FPSInput : MonoBehaviour
     private bool isGrounded = false;
     private bool jumpRequested = false;
     private bool _isRagdoll = false;
-    private bool _isHolding = false;
     private float vertical;
     private float horizontal;
     private HeadPusher _headPusher;
