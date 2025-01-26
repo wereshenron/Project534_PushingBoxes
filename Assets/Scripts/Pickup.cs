@@ -6,8 +6,9 @@ public class Pickup : MonoBehaviour
 {
 
     public float detectionRange = 2.0f;
+    public bool isHolding = false;
+    public int layerMask;
     private Rigidbody _rigidbody;
-    private bool _isHolding = false;
     private Vector3 _previousPosition;
     [SerializeField] private Camera _camera;
 
@@ -15,36 +16,26 @@ public class Pickup : MonoBehaviour
     {
         if (_camera == null)
         {
-            _camera = Camera.main;
+            _camera = transform.GetComponent<Camera>();
         }
+
+        layerMask = ~LayerMask.GetMask("Player");
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && !_isHolding)
-        {
-            AttemptPickup();
-        }
-        else if (Input.GetKeyDown(KeyCode.E) && _isHolding)
-        {
-            AttemptRelease();
-        }
-        else if (Input.GetKeyDown(KeyCode.F) && _isHolding)
-        {
-            AttemptThrow();
-        }
 
-        if (_rigidbody != null && _isHolding)
+        if (_rigidbody != null && isHolding)
         {
             _previousPosition = _rigidbody.transform.position;
-            Debug.Log(_previousPosition);
         }
 
     }
 
     void DetectInteractableCube()
     {
-        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange))
+
+        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange, layerMask))
         {
             if (hit.collider.CompareTag("Interactable"))
             {
@@ -63,54 +54,55 @@ public class Pickup : MonoBehaviour
 
     }
 
-    void AttemptPickup()
+    public void AttemptPickup(Rigidbody rigidbody)
     {
-        DetectInteractableCube();
-        if (_rigidbody == null || _isHolding)
+        // DetectInteractableCube();
+        if (rigidbody == null || isHolding)
         {
             return;
         }
 
-        _rigidbody.isKinematic = true;
-        _rigidbody.transform.parent = _camera.transform;
-        _isHolding = true;
+        rigidbody.isKinematic = true;
+        rigidbody.transform.parent = _camera.transform;
+        _rigidbody = rigidbody;
+        isHolding = true;
     }
 
-    void AttemptRelease()
+    public void AttemptRelease()
     {
-        if (_rigidbody == null || !_isHolding)
+        if (_rigidbody == null || !isHolding)
         {
             return;
         }
         Vector3 releaseVelocity = (_rigidbody.transform.position - _previousPosition) / Time.deltaTime;
-        Debug.Log("Released - release velocity = " + releaseVelocity);
 
         _rigidbody.isKinematic = false;
         _rigidbody.transform.parent = null;
         _rigidbody.velocity = releaseVelocity;
-        _isHolding = false;
+        isHolding = false;
+        _rigidbody = null;
     }
 
     void AttemptThrow()
     {
-        if (_rigidbody == null || !_isHolding)
+        if (_rigidbody == null || !isHolding)
         {
             return;
         }
 
     }
 
-    private void OnDrawGizmos()
-    {
-        if (_camera == null)
-        {
-            _camera = GetComponentInChildren<Camera>();
-        }
+    // private void OnDrawGizmos()
+    // {
+    //     if (_camera == null)
+    //     {
+    //         _camera = GetComponentInChildren<Camera>();
+    //     }
 
-        if (_camera != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawRay(_camera.transform.position, _camera.transform.forward * detectionRange);
-        }
-    }
+    //     if (_camera != null)
+    //     {
+    //         Gizmos.color = Color.red;
+    //         Gizmos.DrawRay(_camera.transform.position, _camera.transform.forward * detectionRange);
+    //     }
+    // }
 }

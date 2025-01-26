@@ -19,33 +19,43 @@ public class FPSInput : MonoBehaviour
     public float drag;
 
     private Rigidbody _rigidbody;
-    [SerializeField] private Camera _camera;
     private Animator _animator;
     private bool isGrounded = false;
     private bool jumpRequested = false;
+    private bool _isRagdoll = false;
+    private bool _isHolding = false;
     private float vertical;
     private float horizontal;
-    private bool _isRagdoll = false;
-    private Vector3 _inputKey;
+    private HeadPusher _headPusher;
+    [SerializeField] private Camera _camera;
 
 
     void Start()
     {
         _rigidbody = GetComponent<Rigidbody>();
+
         if (!_isRagdoll)
         {
             _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY;
         }
-        else 
+        else
         {
             _rigidbody.constraints = RigidbodyConstraints.None;
         }
+
         _animator = GetComponent<Animator>();
+
         if (_camera == null)
         {
             _camera = Camera.main;
         }
-        baseSpeed = speed;
+
+        HeadPusher headPusher = gameObject.GetComponentInChildren<HeadPusher>();
+        if (headPusher)
+        {
+            _headPusher = headPusher;
+        }
+
     }
 
     void Update()
@@ -66,15 +76,56 @@ public class FPSInput : MonoBehaviour
         // Is ragdollin 
         if (Input.GetKeyDown(KeyCode.F) && !_isRagdoll)
         {
-            _rigidbody.constraints = RigidbodyConstraints.None;
-            _rigidbody.drag = 0;
-            _isRagdoll = true;
+
+            if (_rigidbody.velocity.magnitude > 0.1f)
+            {
+                _rigidbody.constraints = RigidbodyConstraints.None;
+                _rigidbody.drag = 0;
+                _isRagdoll = true;
+                return;
+            }
+
+            if (!_headPusher)
+            {
+                return;
+            }
+            StartRagdoll();
         }
         else if (Input.GetKeyDown(KeyCode.F) && _isRagdoll && isGrounded)
         {
+            // Stand back up. Includes resetting RB constraints
             StartCoroutine(RotateToUpright());
             _rigidbody.drag = drag;
             _isRagdoll = false;
+        }
+
+        // Handle Pickup/Letgo input
+        if (TryGetComponent<Pickup>(out var pickup))
+        {
+            if (Input.GetKeyDown(KeyCode.E) && !pickup.isHolding)
+            {
+                if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, pickup.detectionRange, pickup.layerMask))
+                {
+                    Debug.Log("hitting");
+                    Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
+                    pickup.AttemptPickup(rb);
+                }
+            }
+
+            // Saving for later - THIS IS HOW YOU CONTROL OBJECT YOU CLICK ON   
+            // if (Input.GetKeyDown(KeyCode.E) && !pickup.isHolding)
+            // {
+            //     if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, pickup.detectionRange, pickup.layerMask))
+            //     {
+            //         Debug.Log("hitting");
+            //         _rigidbody = hit.collider.GetComponent<Rigidbody>();
+            //         pickup.AttemptPickup(_rigidbody);
+            //     }
+            // }
+            else if (Input.GetKeyDown(KeyCode.E) && pickup.isHolding)
+            {
+                pickup.AttemptRelease();
+            }
         }
 
         // Handle jump input
@@ -83,17 +134,8 @@ public class FPSInput : MonoBehaviour
             jumpRequested = true;
         }
 
-        // _rigidbody.velocity.Normalize();
         // Update animator Speed
         _animator.SetFloat("Speed", _rigidbody.velocity.magnitude);
-
-        if (_rigidbody.velocity.magnitude > 0.1f && isGrounded && !_isRagdoll)
-        {
-            // RotateCharacter();
-        }
-
-        _inputKey = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-
     }
 
     void FixedUpdate()
@@ -120,9 +162,23 @@ public class FPSInput : MonoBehaviour
         if (jumpRequested)
         {
             _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            isGrounded = false;
+            // isGrounded = false;
             jumpRequested = false;
+            StartCoroutine(PushHeadOnDelay());
         }
+    }
+
+    void StartRagdoll()
+    {
+        if (_headPusher == null || _rigidbody == null)
+        {
+            return;
+        }
+
+        _rigidbody.constraints = RigidbodyConstraints.None;
+        _isRagdoll = true;
+        _rigidbody.drag = 0;
+        _headPusher.PushDatHead(_rigidbody);
     }
 
     bool UpdateIsGrounded()
@@ -130,21 +186,12 @@ public class FPSInput : MonoBehaviour
         return Physics.Raycast(transform.position, Vector3.down, groundedDetection);
     }
 
-    void RotateCharacter()
-    {
-        // Calculate the rotation to face the velocity direction
-        Quaternion targetRotation = Quaternion.LookRotation(_rigidbody.velocity);
-
-            // Apply the rotation to the Rigidbody
-        // _rigidbody.rotation = targetRotation;
-    }
-
+    // Coroutines
     private IEnumerator RotateToUpright()
     {
-        Quaternion startRotation = transform.rotation;
         Quaternion targetRotation = Quaternion.Euler(0, 0, 0);
         float elapsedTime = 0f;
-        float rotationDuration = 0.5f;  // Time in seconds for the full rotation
+        float rotationDuration = 0.5f;
 
         while (elapsedTime < rotationDuration)
         {
@@ -156,7 +203,23 @@ public class FPSInput : MonoBehaviour
 
         transform.rotation = targetRotation;  // Ensure we snap exactly to target at the end
         _rigidbody.angularVelocity = Vector3.zero;
+        _rigidbody.velocity = Vector3.zero;
         _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+    }
+
+    private IEnumerator PushHeadOnDelay()
+    {
+        float elapsedTime = 0f;
+        float rotationDuration = 0.2f;
+
+        while (elapsedTime < rotationDuration)
+        {
+
+            elapsedTime += Time.deltaTime;
+            yield return null;  // Wait for the next frame
+        }
+
+        StartRagdoll();
     }
 
     void OnCollisionEnter(Collision collision)

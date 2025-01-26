@@ -8,17 +8,8 @@ public class Push : MonoBehaviour
     public float detectionRange = 2.0f;
     private Rigidbody _rigidbody;
     [SerializeField] private Camera _camera;
-
-    void Start()
-    {
-        if (_camera == null)
-        {
-            _camera = Camera.main;
-        }
-    }
-
-    // Update is called once per frame
-    void Update()
+    
+    void FixedUpdate()
     {
         if (Input.GetMouseButtonDown(0))
         {
@@ -33,16 +24,12 @@ public class Push : MonoBehaviour
 
     void DetectInteractableCube()
     {
-        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange))
+        int layerMask = ~LayerMask.GetMask("Player");
+
+        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange, layerMask))
         {
-            if (hit.collider.CompareTag("Interactable"))
-            {
-                _rigidbody = hit.collider.GetComponent<Rigidbody>();
-            }
-            else
-            {
-                _rigidbody = null;
-            }
+            Debug.Log("hitting");
+            _rigidbody = hit.collider.GetComponent<Rigidbody>();
         }
         else
         {
@@ -50,24 +37,24 @@ public class Push : MonoBehaviour
         }
     }
 
-    // private void OnDrawGizmos()
-    // {
-    //     if (_camera == null)
-    //     {
-    //         _camera = GetComponentInChildren<Camera>();
-    //     }
+    private void OnDrawGizmos()
+    {
+        if (_camera == null)
+        {
+            _camera = transform.GetComponent<Camera>();
+        }
 
-    //     if (_camera != null)
-    //     {
-    //         Gizmos.color = Color.red;
-    //         Gizmos.DrawRay(_camera.transform.position, _camera.transform.forward * detectionRange);
-    //     }
-    // }
+        if (_camera != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(_camera.transform.position, _camera.transform.forward * detectionRange);
+        }
+    }
 
     void Launch(Vector3 direction)
     {
         DetectInteractableCube();
-        if (_rigidbody == null) 
+        if (_rigidbody == null)
         {
             return;
         }
