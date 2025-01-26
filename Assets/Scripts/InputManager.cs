@@ -1,8 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Security.Claims;
-using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
@@ -106,7 +102,6 @@ public class FPSInput : MonoBehaviour
             {
                 if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, pickup.detectionRange, pickup.layerMask))
                 {
-                    Debug.Log("hitting");
                     Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
                     pickup.AttemptPickup(rb);
                 }

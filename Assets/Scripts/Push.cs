@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Push : MonoBehaviour
@@ -28,7 +27,6 @@ public class Push : MonoBehaviour
 
         if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange, layerMask))
         {
-            Debug.Log("hitting");
             _rigidbody = hit.collider.GetComponent<Rigidbody>();
         }
         else

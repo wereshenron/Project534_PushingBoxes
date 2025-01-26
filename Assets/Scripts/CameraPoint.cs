@@ -10,11 +10,8 @@ public class CameraPoint : MonoBehaviour
     void Start()
     {
         _camera = GetComponent<Camera>();
-
         Cursor.visible = false;
-
         Cursor.lockState = CursorLockMode.Locked;
-
     }
 
     void Update()
@@ -30,19 +27,6 @@ public class CameraPoint : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
-
-        // if (_player != null)
-        // {
-        //     Rigidbody rb = _player.GetComponent<Rigidbody>();
-        //     if (rb != null && rb.velocity.magnitude > 0.1f)
-        //     {
-        //         float y = Input.GetAxis("Mouse X");
-        //         Vector3 rotate = new(0, y * rotationSensitivity * Time.deltaTime, 0);
-        //         _player.eulerAngles += rotate;
-        //     }
-        // }
-
-
     }
 
     void OnGUI()
@@ -52,11 +36,4 @@ public class CameraPoint : MonoBehaviour
         float posY = _camera.pixelHeight / 2 - size / 2;
         GUI.Label(new Rect(posX, posY, size, size), "*");
     }
-
-
-    // private void OnDrawGizmos()
-    // {
-    //     Gizmos.color = Color.red;
-    //     Gizmos.DrawRay(transform.position, transform.forward * detectionRange);
-    // }
 }
