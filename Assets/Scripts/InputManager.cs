@@ -158,7 +158,7 @@ public class FPSInput : MonoBehaviour
             _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             // isGrounded = false;
             jumpRequested = false;
-            StartCoroutine(PushHeadOnDelay());
+            // StartCoroutine(PushHeadOnDelay());
         }
     }
 
