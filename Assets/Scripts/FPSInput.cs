@@ -5,7 +5,6 @@ using System.Security.Claims;
 using Unity.VisualScripting;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 [AddComponentMenu("Control Script/FPS Input")]
 public class FPSInput : MonoBehaviour
 {
@@ -14,95 +13,88 @@ public class FPSInput : MonoBehaviour
     public float jumpForce = 8.0f;
     public float sprintBoost = 1.4f;
     public float groundedDetection = 1.0f;
-
-    private Rigidbody _rigidbody;
-    private Camera _camera;
-    private Animator _animator;
     private bool isGrounded = false;
-    private bool jumpRequested = false;
-    private float _speed = 6.0f;
-    private Vector3 _movement;
-    private Vector3 _normalizedMovement;
-    private bool _sprintingBegan = false;
-    private bool _sprintingEnded = false;
+    private CharacterController _controller;
+    private Vector3 _velocity;
 
 
     void Start()
     {
-        _rigidbody = GetComponent<Rigidbody>();
-        _animator = GetComponent<Animator>();
-        _rigidbody.freezeRotation = true; // Prevent unwanted rotations due to physics
-        _camera = GetComponentInChildren<Camera>();
+        _controller = GetComponent<CharacterController>();
     }
 
     void Update()
     {
-
-        // Update grounded state
-        isGrounded = UpdateIsGrounded();
-        
-        // Handle Sprint
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        // Ground check
+        isGrounded = _controller.isGrounded;
+        if (isGrounded && _velocity.y < 0)
         {
-            // _speed *= sprintBoost;
-            _sprintingBegan = true;
-        }
-        else if (Input.GetKeyUp(KeyCode.LeftShift))
-        {
-            _sprintingEnded = true;
+            _velocity.y = -2f; // Small downward force to stick to the ground
         }
 
-        // Handle jump input
-        if (isGrounded && Input.GetButtonDown("Jump"))
+        // Get input
+        float moveX = Input.GetAxis("Horizontal");
+        float moveZ = Input.GetAxis("Vertical");
+
+        // Move relative to camera's forward
+        Vector3 move = transform.right * moveX + transform.forward * moveZ;
+        _controller.Move(move * baseSpeed * Time.deltaTime);
+
+        // Jump
+        if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            jumpRequested = true;
+            _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
         }
 
+        // Apply gravity
+        _velocity.y += gravity * Time.deltaTime;
+        _controller.Move(_velocity * Time.deltaTime);
     }
 
-    void FixedUpdate()
-    {
-         // Handle Sprint
-        if (_sprintingBegan)
-        {
-            _speed *= sprintBoost;
-            _sprintingBegan = false;
-        }
-        else if (_sprintingEnded)
-        {
-            _speed = baseSpeed;
-            _sprintingEnded = false;
-        }
 
-        // Get input for movement
-        // Get input for movement
-        float deltaX = Input.GetAxis("Horizontal");
-        float deltaZ = Input.GetAxis("Vertical");
-        Vector3 movement = new Vector3(deltaX, 0, deltaZ);
+    // void FixedUpdate()
+    // {
+    //      // Handle Sprint
+    //     if (_sprintingBegan)
+    //     {
+    //         _speed *= sprintBoost;
+    //         _sprintingBegan = false;
+    //     }
+    //     else if (_sprintingEnded)
+    //     {
+    //         _speed = baseSpeed;
+    //         _sprintingEnded = false;
+    //     }
 
-        // Normalize input to prevent faster diagonal movement
-        if (movement.magnitude > 1)
-        {
-            movement.Normalize();
-        }
+    //     // Get input for movement
+    //     // Get input for movement
+    //     float deltaX = Input.GetAxis("Horizontal");
+    //     float deltaZ = Input.GetAxis("Vertical");
+    //     Vector3 movement = new Vector3(deltaX, 0, deltaZ);
 
-        movement *= _speed;
+    //     // Normalize input to prevent faster diagonal movement
+    //     if (movement.magnitude > 1)
+    //     {
+    //         movement.Normalize();
+    //     }
 
-        // Update animator Speed
-        _animator.SetFloat("Speed", movement.magnitude);
+    //     movement *= _speed;
 
-        // Move Rigidbody
-        Vector3 velocity = transform.TransformDirection(movement) * Time.fixedDeltaTime;
-        _rigidbody.MovePosition(_rigidbody.position + velocity);
+    //     // Update animator Speed
+    //     _animator.SetFloat("Speed", movement.magnitude);
 
-        // Handle Jump
-        if (jumpRequested)
-        {
-            _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            isGrounded = false;
-            jumpRequested = false;
-        }
-    }
+    //     // Move Rigidbody
+    //     Vector3 velocity = transform.TransformDirection(movement) * Time.fixedDeltaTime;
+    //     _rigidbody.MovePosition(_rigidbody.position + velocity);
+
+    //     // Handle Jump
+    //     if (jumpRequested)
+    //     {
+    //         _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+    //         isGrounded = false;
+    //         jumpRequested = false;
+    //     }
+    // }
 
     bool UpdateIsGrounded()
     {
