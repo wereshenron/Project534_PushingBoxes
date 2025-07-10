@@ -46,6 +46,7 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
+*.so
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -60,6 +61,7 @@ sysinfo.txt
 *.aab
 *.unitypackage
 *.app
+*.blob
 
 # Crashlytics generated file
 crashlytics-build.properties
@@ -83,3 +85,6 @@ Assets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs
 Assets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs.meta
 Assets/KinematicCharacterController
 Assets/Samples
+builds_Data/
+FirstProject_BurstDebugInformation_DoNotShip/
+[Bb]uild*
