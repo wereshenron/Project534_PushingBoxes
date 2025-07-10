@@ -9,7 +9,7 @@ public class Pickup : MonoBehaviour
     public float detectionRange = 2.0f;
 
     public float pickupCooldownDuration = 2f;
-    public float throwForce = 5f;
+    public float throwForce;
     private float _nextPickupTime = 0f;
     private Rigidbody _rigidbody;
     private bool _isHolding = false;
@@ -27,7 +27,9 @@ public class Pickup : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0) && !_isHolding && Time.time >= _nextPickupTime)
+
+        // Debug.Log(_isHolding);
+        if (Input.GetMouseButtonDown(0) && !_isHolding)
         {
             AttemptPickup();
         }
@@ -73,16 +75,12 @@ public class Pickup : MonoBehaviour
     void AttemptPickup()
     {
         DetectInteractableCube();
-        if (_rigidbody == null || _isHolding || Time.time < _nextPickupTime)
+        if (_rigidbody == null || _isHolding)
         {
             return;
         }
         else
         {
-            if (Time.time >= _nextPickupTime)
-            {
-                _nextPickupTime = Time.time + pickupCooldownDuration;
-            }
             _rigidbody.isKinematic = true;
             _rigidbody.interpolation = RigidbodyInterpolation.None;
             _rigidbody.transform.parent = _camera.transform;
@@ -90,19 +88,23 @@ public class Pickup : MonoBehaviour
         }
     }
 
-    void AttemptRelease()
+    void AttemptRelease(bool isThrown = false)
     {
         if (_rigidbody == null || !_isHolding)
         {
             return;
         }
         Vector3 releaseVelocity = (_rigidbody.transform.position - _previousPosition) / Time.deltaTime;
-        Debug.Log("Released - release velocity = " + releaseVelocity);
+        // Debug.Log("Released - release velocity = " + releaseVelocity);
 
         _rigidbody.isKinematic = false;
         _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         _rigidbody.transform.parent = null;
-        _rigidbody.velocity = releaseVelocity;
+
+        if (!isThrown)
+        {
+            _rigidbody.velocity = releaseVelocity;
+        }
         _isHolding = false;
     }
 
@@ -113,8 +115,7 @@ public class Pickup : MonoBehaviour
             return;
         }
 
-        Debug.Log("Throwing");
-        AttemptRelease();
+        AttemptRelease(isThrown: true);
         _rigidbody.AddForce(_camera.transform.forward * throwForce);
 
     }

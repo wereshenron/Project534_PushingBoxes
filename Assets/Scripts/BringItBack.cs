@@ -7,10 +7,15 @@ public class BringItBack : MonoBehaviour
     public Vector3 interactableSpawnPoint;
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log(other.name);
         if (other.CompareTag("Interactable") || other.CompareTag("Player"))
         {
-            other.attachedRigidbody.velocity = Vector3.zero;
-            other.attachedRigidbody.angularVelocity = Vector3.zero;
+            if (other.attachedRigidbody)
+            {
+                other.attachedRigidbody.velocity = Vector3.zero;
+                other.attachedRigidbody.angularVelocity = Vector3.zero;
+            }
+            
             other.transform.position = interactableSpawnPoint;
         }
     }
