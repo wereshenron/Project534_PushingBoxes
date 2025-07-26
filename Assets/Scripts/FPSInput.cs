@@ -29,7 +29,7 @@ public class FPSInput : MonoBehaviour
         isGrounded = _controller.isGrounded;
         if (isGrounded && _velocity.y < 0)
         {
-            _velocity.y = -2f; // Small downward force to stick to the ground
+            _velocity.y = -2f;
         }
 
         // Get input
@@ -38,7 +38,7 @@ public class FPSInput : MonoBehaviour
 
         // Move relative to camera's forward
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
-        _controller.Move(move * baseSpeed * Time.deltaTime);
+        _controller.Move(baseSpeed * Time.deltaTime * move);
 
         // Jump
         if (Input.GetButtonDown("Jump") && isGrounded)
@@ -46,58 +46,14 @@ public class FPSInput : MonoBehaviour
             _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
         }
 
+        // Sprint
+        if (Input.GetButtonDown("Sprint") && isGrounded)
+        {
+            _velocity = new Vector3(_velocity.x * sprintBoost, _velocity.y, _velocity.z * sprintBoost);
+        }
+
         // Apply gravity
         _velocity.y += gravity * Time.deltaTime;
         _controller.Move(_velocity * Time.deltaTime);
-    }
-
-
-    // void FixedUpdate()
-    // {
-    //      // Handle Sprint
-    //     if (_sprintingBegan)
-    //     {
-    //         _speed *= sprintBoost;
-    //         _sprintingBegan = false;
-    //     }
-    //     else if (_sprintingEnded)
-    //     {
-    //         _speed = baseSpeed;
-    //         _sprintingEnded = false;
-    //     }
-
-    //     // Get input for movement
-    //     // Get input for movement
-    //     float deltaX = Input.GetAxis("Horizontal");
-    //     float deltaZ = Input.GetAxis("Vertical");
-    //     Vector3 movement = new Vector3(deltaX, 0, deltaZ);
-
-    //     // Normalize input to prevent faster diagonal movement
-    //     if (movement.magnitude > 1)
-    //     {
-    //         movement.Normalize();
-    //     }
-
-    //     movement *= _speed;
-
-    //     // Update animator Speed
-    //     _animator.SetFloat("Speed", movement.magnitude);
-
-    //     // Move Rigidbody
-    //     Vector3 velocity = transform.TransformDirection(movement) * Time.fixedDeltaTime;
-    //     _rigidbody.MovePosition(_rigidbody.position + velocity);
-
-    //     // Handle Jump
-    //     if (jumpRequested)
-    //     {
-    //         _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-    //         isGrounded = false;
-    //         jumpRequested = false;
-    //     }
-    // }
-
-    bool UpdateIsGrounded()
-    {
-        return Physics.Raycast(transform.position, Vector3.down, groundedDetection);
     }
 }

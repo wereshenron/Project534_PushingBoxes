@@ -6,7 +6,7 @@ public class SetRbInterpolate : MonoBehaviour
 {
     public RigidbodyInterpolation interpolationMode = RigidbodyInterpolation.Interpolate;
 
-    void Start()
+    void Awake()
     {
         Rigidbody[] rigidbodies = FindObjectsOfType<Rigidbody>();
 
@@ -14,7 +14,5 @@ public class SetRbInterpolate : MonoBehaviour
         {
             rb.interpolation = interpolationMode;
         }
-
-        Debug.Log($"Set interpolation mode to {interpolationMode} for {rigidbodies.Length} rigidbodies.");
     }
 }

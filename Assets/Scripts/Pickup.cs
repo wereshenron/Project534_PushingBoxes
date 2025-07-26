@@ -6,12 +6,16 @@ using UnityEngine;
 public class Pickup : MonoBehaviour
 {
 
-    public float detectionRange = 2.0f;
 
-    public float pickupCooldownDuration = 2f;
+    [Header("Throw Variables")]
+    public float maxThrowCharge = 2f;      
+    public float maxThrowMultiplier = 3f;     
+    private float _currentThrowCharge = 0f;
+
+    [Header("Pickup Variables")]
+    public float detectionRange = 2.0f;
     public float throwForce;
-    private float _nextPickupTime = 0f;
-    private Rigidbody _rigidbody;
+    private Rigidbody _itemHeld;
     private bool _isHolding = false;
     private Vector3 _previousPosition;
     [SerializeField] private Camera _camera;
@@ -28,45 +32,68 @@ public class Pickup : MonoBehaviour
     void Update()
     {
 
-        // Debug.Log(_isHolding);
+        Debug.Log(_currentThrowCharge);
+
+        // Pick that thang up
         if (Input.GetMouseButtonDown(0) && !_isHolding)
         {
             AttemptPickup();
         }
+
+        // Drop it (gently)
         else if (Input.GetMouseButtonUp(0) && _isHolding)
         {
             AttemptRelease();
         }
+
+        if (Input.GetMouseButtonDown(1) && _isHolding)
+        {
+            _currentThrowCharge = 0f;
+        }
+
+        // 🔥 Accumulate charge while holding
+        if (Input.GetMouseButton(1) && _isHolding)
+        {
+            _currentThrowCharge += Time.deltaTime;
+            _currentThrowCharge = Mathf.Clamp(_currentThrowCharge, 0f, maxThrowCharge);
+        }
+
+        // TROW
         else if (Input.GetMouseButtonUp(1) && _isHolding)
         {
 
             AttemptThrow();
         }
 
-        if (_rigidbody != null && _isHolding)
+        if (_itemHeld != null && _isHolding)
         {
-            _previousPosition = _rigidbody.transform.position;
-            // Debug.Log(_previousPosition);
+            _previousPosition = _itemHeld.transform.position;
         }
+
+
 
     }
 
     void DetectInteractableCube()
     {
-        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange))
+        int layerToIgnore = 1 << 8; // ignore layer 8
+        int inverseMask = ~layerToIgnore;
+
+        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out RaycastHit hit, detectionRange, inverseMask))
         {
+            Debug.Log(hit.collider.name);
             if (hit.collider.CompareTag("Interactable"))
             {
-                _rigidbody = hit.collider.GetComponent<Rigidbody>();
+                _itemHeld = hit.collider.GetComponent<Rigidbody>();
             }
             else
             {
-                _rigidbody = null;
+                _itemHeld = null;
             }
         }
         else
         {
-            _rigidbody = null;
+            _itemHeld = null;
         }
 
 
@@ -75,48 +102,56 @@ public class Pickup : MonoBehaviour
     void AttemptPickup()
     {
         DetectInteractableCube();
-        if (_rigidbody == null || _isHolding)
+        if (_itemHeld == null || _isHolding)
         {
             return;
         }
         else
         {
-            _rigidbody.isKinematic = true;
-            _rigidbody.interpolation = RigidbodyInterpolation.None;
-            _rigidbody.transform.parent = _camera.transform;
+            _itemHeld.isKinematic = true;
+            _itemHeld.interpolation = RigidbodyInterpolation.None;
+            _itemHeld.transform.parent = _camera.transform;
             _isHolding = true;
         }
     }
 
-    void AttemptRelease(bool isThrown = false)
+    bool AttemptRelease(bool isThrown = false)
     {
-        if (_rigidbody == null || !_isHolding)
+        if (_itemHeld == null || !_isHolding)
         {
-            return;
+            return false;
         }
-        Vector3 releaseVelocity = (_rigidbody.transform.position - _previousPosition) / Time.deltaTime;
+        Vector3 releaseVelocity = (_itemHeld.transform.position - _previousPosition) / Time.deltaTime;
         // Debug.Log("Released - release velocity = " + releaseVelocity);
 
-        _rigidbody.isKinematic = false;
-        _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-        _rigidbody.transform.parent = null;
+        _itemHeld.isKinematic = false;
+        _itemHeld.interpolation = RigidbodyInterpolation.Interpolate;
+        _itemHeld.transform.parent = null;
 
         if (!isThrown)
         {
-            _rigidbody.velocity = releaseVelocity;
+            _itemHeld.velocity = releaseVelocity;
         }
         _isHolding = false;
+        return true;
     }
 
     void AttemptThrow()
     {
-        if (_rigidbody == null || !_isHolding || !_camera)
+        if (_itemHeld == null || !_isHolding || !_camera)
         {
             return;
         }
 
-        AttemptRelease(isThrown: true);
-        _rigidbody.AddForce(_camera.transform.forward * throwForce);
+        if (AttemptRelease(isThrown: true))
+        {
+            float chargeRatio = _currentThrowCharge / maxThrowCharge;
+            float finalThrowForce = throwForce * Mathf.Lerp(1f, maxThrowMultiplier, chargeRatio);
+
+        
+            _itemHeld.AddForce(_camera.transform.forward * finalThrowForce);
+            _currentThrowCharge = 0f;
+        }
 
     }
 

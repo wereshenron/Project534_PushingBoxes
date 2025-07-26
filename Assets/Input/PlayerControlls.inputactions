@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "PlayerControlls",
+    "maps": [
+        {
+            "name": "Player",
+            "id": "215686ad-89e2-429d-aa74-c714660cb7aa",
+            "actions": [
+                {
+                    "name": "Sprint",
+                    "type": "Button",
+                    "id": "e42cf743-1317-4958-a4ef-91882459b0fc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "d8934f8a-a404-44f1-a11d-bc65d292e6c4",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Sprint",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
